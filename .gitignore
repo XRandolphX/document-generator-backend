@@ -1,27 +1,27 @@
-# Ignorar entorno virtual de Python
+# Entorno virtual
 .venv/
 
-# Ignorar archivos de compilación de Python
+# Compilación Python
 __pycache__/
 *.pyc
 *.pyo
 
-# Ignorar archivos de logs
+# Logs
 *.log
 
-# Ignorar configuraciones de editores
+# Editores
 .vscode/
 .idea/
 
-# Ignorar archivos del sistema (macOS, Linux)
+# Sistema operativo
 .DS_Store
 
-# Ignorar .env
+# Variables de entorno
 .env
 
-# Ignorando carpetas
-generated_files
-templates
+# Archivos generados (solo el contenido, no la carpeta)
+src/ai_doc/generated_files/*
+!src/ai_doc/generated_files/.gitkeep
 
-# Ignorando PDF
-document_generated.pdf
+# Archivos generados específicos
+*.pdf
