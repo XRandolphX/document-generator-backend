@@ -11,19 +11,18 @@ from ai_doc.core.parser import process_response
 from ai_doc.core.prompt import modify_prompt
 
 
-def generate_document(user_input):
+def generate_document(session_params: dict, teacher_profile: dict) -> str:
     """
-    Genera un documento Word y PDF a partir del input del usuario.
+    Genera un documento Word a partir de los parámetros de la sesión
+    y el perfil del docente.
     """
-    chat_history = []
-    prompt = modify_prompt(user_input)
-    chat_history.append({"role": "user", "content": prompt})
+    prompt = modify_prompt(session_params, teacher_profile)
 
     client = OpenAI(base_url="https://openrouter.ai/api/v1", api_key=API_KEY)
 
     response_iterator = client.chat.completions.create(
         model="deepseek/deepseek-chat-v3-0324:free",
-        messages=chat_history,
+        messages=[{"role": "user", "content": prompt}],
         stream=True,
     )
 
@@ -35,45 +34,44 @@ def generate_document(user_input):
 
     full_reply_content = "".join(collected_messages)
 
-    (
-        title_GPT,
-        competencias_capacidades_GPT,
-        desempeno_GPT,
-        criterio_GPT,
-        instrumento_evaluacion_GPT,
-        evidencia_GPT,
-        purpose_GPT,
-        actitudes_GPT,
-        antes_session_GPT,
-        recursos_GPT,
-        inicio_GPT,
-        situation_problem_GPT,
-        preguntas_situation_GPT,
-        pregunta_investigation_GPT,
-        hypothesis_GPT,
-        preguntas_tema_GPT,
-    ) = process_response(full_reply_content)
-
-    fecha = datetime.today().strftime("%d %b, %Y")
+    sections = process_response(full_reply_content)
 
     context = {
-        "title": title_GPT,
-        "competencias_capacidades": competencias_capacidades_GPT,
-        "desempeno": desempeno_GPT,
-        "criterio_evaluacion": criterio_GPT,
-        "instrumento_evaluacion": instrumento_evaluacion_GPT,
-        "evidencia": evidencia_GPT,
-        "purpose": purpose_GPT,
-        "actitudes": actitudes_GPT,
-        "antes_session": antes_session_GPT,
-        "recursos": recursos_GPT,
-        "inicio": inicio_GPT,
-        "situation_problem": situation_problem_GPT,
-        "preguntas_situation": preguntas_situation_GPT,
-        "pregunta_investigation": pregunta_investigation_GPT,
-        "hypothesis": hypothesis_GPT,
-        "preguntas_tema": preguntas_tema_GPT,
-        "fecha": fecha,
+        # Datos del docente
+        "nombre_docente": teacher_profile["nombre_docente"],
+        "institucion_educativa": teacher_profile["institucion_educativa"],
+        "area": teacher_profile["area"],
+        "especialidad": teacher_profile["especialidad"],
+        "ciclo": teacher_profile["ciclo"],
+        "tipo_rubrica": teacher_profile["tipo_rubrica"],
+        # Datos de la sesión
+        "titulo": session_params["titulo"],
+        "grado_seccion": session_params["grado_seccion"],
+        "numero_sesion": session_params["numero_sesion"],
+        "nombre_modulo": session_params["nombre_modulo"],
+        "nombre_unidad": session_params["nombre_unidad"],
+        "fecha": session_params.get("fecha", datetime.today().strftime("%d %b, %Y")),
+        "duracion": session_params["duracion"],
+        "materiales_recursos": session_params["materiales_recursos"],
+        # Contenido generado por la IA
+        "proposito": sections["proposito"],
+        "indicador_logro": sections["indicador_logro"],
+        "desempeno": sections["desempeno"],
+        "campo_tematico": sections["campo_tematico"],
+        "evidencia_proceso": sections["evidencia_proceso"],
+        "evidencia_producto_final": sections["evidencia_producto_final"],
+        "evidencia_actuacion": sections["evidencia_actuacion"],
+        "criterio_desempeno": sections["criterio_desempeno"],
+        "instrumento": sections["instrumento"],
+        "proposito_aprendizaje": sections["proposito_aprendizaje"],
+        "introduccion": sections["introduccion"],
+        "desarrollo_contenidos": sections["desarrollo_contenidos"],
+        "desarrollo_actividades": sections["desarrollo_actividades"],
+        "evaluacion_formativa": sections["evaluacion_formativa"],
+        "retroalimentacion": sections["retroalimentacion"],
+        "cierre": sections["cierre"],
+        "extension": sections["extension"],
+        "rubrica": sections["rubrica"],
     }
 
     output_dir = Path(__file__).parent.parent / "generated_files"
@@ -88,7 +86,7 @@ def generate_document(user_input):
     return str(doc_path)
 
 
-def convert_to_pdf(doc_path):
+def convert_to_pdf(doc_path: str) -> str:
     """
     Convierte un archivo .docx a PDF usando LibreOffice.
     """
@@ -96,8 +94,6 @@ def convert_to_pdf(doc_path):
         raise FileNotFoundError(f"El archivo {doc_path} no existe.")
 
     output_folder = os.path.dirname(doc_path)
-    os.makedirs(output_folder, exist_ok=True)
-
     pdf_name = os.path.splitext(os.path.basename(doc_path))[0] + ".pdf"
     pdf_path = os.path.join(output_folder, pdf_name)
 
