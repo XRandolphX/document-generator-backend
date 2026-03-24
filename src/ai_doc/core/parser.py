@@ -1,9 +1,28 @@
+"""
+parser.py
+---------
+Procesamiento y limpieza de la respuesta en texto plano devuelta por el
+modelo de IA. Extrae cada sección de la sesión de aprendizaje mediante
+expresiones regulares y las organiza en un diccionario estructurado.
+"""
+
 import re
 
 
-def remove_markdown(text):
+def remove_markdown(text: str) -> str:
     """
     Elimina formato Markdown del texto.
+
+    Remueve los siguientes elementos:
+        - Encabezados (``#`` al inicio de línea).
+        - Énfasis y código en línea (``*``, ``_``, `` ` ``).
+        - Caracteres especiales de cita y enlace (``>``, ``[``, ``]``).
+
+    Args:
+        text (str): Texto con posible formato Markdown.
+
+    Returns:
+        str: Texto limpio sin marcadores Markdown.
     """
     text = re.sub(r"^\s*#{1,6}\s*", "", text, flags=re.MULTILINE)
     text = re.sub(r"[*_`]", "", text)
@@ -11,10 +30,49 @@ def remove_markdown(text):
     return text
 
 
-def process_response(response):
+def process_response(response: str) -> dict:
     """
     Procesa la respuesta de la IA y la divide en secciones
     correspondientes a la sesión de aprendizaje.
+
+    Normaliza los espacios en blanco, elimina el formato Markdown y aplica
+    expresiones regulares para extraer el contenido de cada clave esperada.
+    Si una sección no se encuentra en la respuesta, se asigna el valor
+    ``"Respuesta incompleta"`` como fallback.
+
+    Las secciones extraídas siguen el orden del formato solicitado al modelo
+    en ``prompt.modify_prompt()``.
+
+    Args:
+        response (str): Texto completo devuelto por el modelo de IA,
+            con el formato ``clave: contenido`` por línea.
+
+    Returns:
+        dict: Diccionario con una entrada por cada sección de la sesión.
+            Claves del diccionario:
+                - proposito
+                - indicador_logro
+                - desempeno
+                - campo_tematico
+                - evidencia_proceso
+                - evidencia_producto_final
+                - evidencia_actuacion
+                - criterio_desempeno
+                - instrumento
+                - proposito_aprendizaje
+                - introduccion
+                - desarrollo_contenidos
+                - desarrollo_actividades
+                - evaluacion_formativa
+                - retroalimentacion
+                - cierre
+                - extension
+                - rubrica
+
+    Example:
+        >>> sections = process_response(ai_raw_text)
+        >>> print(sections["proposito"])
+        'Que los estudiantes consoliden...'
     """
     cleaned_response = re.sub(r"\s+", " ", response).strip()
     cleaned_response = remove_markdown(cleaned_response)

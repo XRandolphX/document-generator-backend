@@ -1,3 +1,16 @@
+"""
+document.py
+-----------
+Generación del documento Word y conversión a PDF.
+
+Orquesta el flujo completo de producción del archivo final:
+    1. Construye el prompt con ``prompt.modify_prompt()``.
+    2. Llama al modelo DeepSeek vía OpenRouter en modo streaming.
+    3. Parsea la respuesta con ``parser.process_response()``.
+    4. Rellena la plantilla Word con ``DocxTemplate``.
+    5. Convierte el ``.docx`` generado a PDF mediante LibreOffice.
+"""
+
 import os
 import subprocess
 from datetime import datetime
@@ -15,6 +28,37 @@ def generate_document(session_params: dict, teacher_profile: dict) -> str:
     """
     Genera un documento Word a partir de los parámetros de la sesión
     y el perfil del docente.
+
+    Flujo interno:
+        1. Invoca ``modify_prompt()`` para construir el prompt.
+        2. Realiza una solicitud en streaming al modelo
+           ``deepseek/deepseek-chat-v3-0324:free`` vía OpenRouter.
+        3. Concatena los chunks de la respuesta y los procesa con
+           ``process_response()``.
+        4. Combina los datos del docente, los parámetros de sesión y el
+           contenido generado en un contexto para ``DocxTemplate``.
+        5. Renderiza la plantilla ``class_template.docx`` y guarda el
+           archivo resultante en ``generated_files/document_generated.docx``.
+
+    Args:
+        session_params (dict): Parámetros de la sesión de aprendizaje.
+            Claves obligatorias: ``titulo``, ``grado_seccion``,
+            ``numero_sesion``, ``nombre_modulo``, ``nombre_unidad``,
+            ``duracion``, ``materiales_recursos``.
+            Clave opcional: ``fecha`` (si se omite, se usa la fecha actual
+            con formato ``"%d %b, %Y"``).
+        teacher_profile (dict): Perfil del docente.
+            Claves obligatorias: ``nombre_docente``, ``institucion_educativa``,
+            ``area``, ``especialidad``, ``ciclo``, ``tipo_rubrica``.
+
+    Returns:
+        str: Ruta absoluta al archivo ``.docx`` generado.
+
+    Raises:
+        openai.APIError: Si la solicitud a la API de OpenRouter falla.
+        FileNotFoundError: Si la plantilla ``class_template.docx`` no existe.
+        Exception: Cualquier error inesperado durante el renderizado o guardado
+            del documento.
     """
     prompt = modify_prompt(session_params, teacher_profile)
 
@@ -88,7 +132,31 @@ def generate_document(session_params: dict, teacher_profile: dict) -> str:
 
 def convert_to_pdf(doc_path: str) -> str:
     """
-    Convierte un archivo .docx a PDF usando LibreOffice.
+    Convierte un archivo ``.docx`` a PDF usando LibreOffice en modo headless.
+
+    Ejecuta el comando ``soffice --headless --convert-to pdf`` en un
+    subproceso. El archivo PDF se genera en el mismo directorio que el
+    ``.docx`` de entrada y comparte su nombre base.
+
+    Args:
+        doc_path (str): Ruta absoluta al archivo ``.docx`` que se desea
+            convertir. El archivo debe existir en el sistema de archivos.
+
+    Returns:
+        str: Ruta absoluta al archivo ``.pdf`` generado.
+
+    Raises:
+        FileNotFoundError: Si ``doc_path`` no corresponde a un archivo
+            existente en el sistema de archivos.
+        RuntimeError: Si LibreOffice termina con un código de error, o si el
+            archivo PDF no aparece en el directorio de salida tras la
+            conversión.
+
+    Note:
+        Requiere que ``soffice`` (LibreOffice) esté instalado y disponible
+        en el PATH del sistema. En entornos de despliegue como Railway puede
+        ser necesario configurar un buildpack adicional o usar una alternativa
+        como Gotenberg.
     """
     if not os.path.isfile(doc_path):
         raise FileNotFoundError(f"El archivo {doc_path} no existe.")
