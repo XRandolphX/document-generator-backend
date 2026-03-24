@@ -47,7 +47,7 @@ def generate_document_endpoint():
         ), 500
 
     except Exception as e:
-        return jsonify(success=False, error=f"Error inesperado{str(e)}"), 500
+        return jsonify(success=False, error=f"Error inesperado: {str(e)}"), 500
 
 
 def create_app():
