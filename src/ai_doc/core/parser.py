@@ -2,76 +2,86 @@ import re
 
 
 def remove_markdown(text):
-    # Elimina encabezados (líneas que comienzan con uno o más '#')
+    """
+    Elimina formato Markdown del texto.
+    """
     text = re.sub(r"^\s*#{1,6}\s*", "", text, flags=re.MULTILINE)
-    # Elimina caracteres de énfasis (asteriscos, guiones bajos, backticks)
     text = re.sub(r"[*_`]", "", text)
-    # Elimina otros caracteres típicos de Markdown
     text = re.sub(r"[>\[\]]", "", text)
     return text
 
 
 def process_response(response):
     """
-    Procesa la respuesta y divide en secciones el documento de la sesión de aprendizaje.
+    Procesa la respuesta de la IA y la divide en secciones
+    correspondientes a la sesión de aprendizaje.
     """
-    # Limpia los espacios extra
     cleaned_response = re.sub(r"\s+", " ", response).strip()
-    # Elimina formato Markdown
     cleaned_response = remove_markdown(cleaned_response)
 
     patterns = {
-        "title": re.compile(
-            r"title:\s*(.*?)(?=competencia:|$)", re.DOTALL | re.IGNORECASE
+        "proposito": re.compile(
+            r"proposito:\s*(.*?)(?=indicador_logro:|$)", re.DOTALL | re.IGNORECASE
         ),
-        "competencia": re.compile(
-            r"competencia:\s*(.*?)(?=desempeno:|$)", re.DOTALL | re.IGNORECASE
+        "indicador_logro": re.compile(
+            r"indicador_logro:\s*(.*?)(?=desempeno:|$)", re.DOTALL | re.IGNORECASE
         ),
         "desempeno": re.compile(
-            r"desempeno:\s*(.*?)(?=criterio:|$)", re.DOTALL | re.IGNORECASE
+            r"desempeno:\s*(.*?)(?=campo_tematico:|$)", re.DOTALL | re.IGNORECASE
         ),
-        "criterio": re.compile(
-            r"criterio:\s*(.*?)(?=instrumentoevaluacion:|$)", re.DOTALL | re.IGNORECASE
-        ),
-        "instrumentoevaluacion": re.compile(
-            r"instrumentoevaluacion:\s*(.*?)(?=evidencia:|$)", re.DOTALL | re.IGNORECASE
-        ),
-        "evidencia": re.compile(
-            r"evidencia:\s*(.*?)(?=purpose:|$)", re.DOTALL | re.IGNORECASE
-        ),
-        "purpose": re.compile(
-            r"purpose:\s*(.*?)(?=actitudes:|$)", re.DOTALL | re.IGNORECASE
-        ),
-        "actitudes": re.compile(
-            r"actitudes:\s*(.*?)(?=antessession:|$)", re.DOTALL | re.IGNORECASE
-        ),
-        "antessession": re.compile(
-            r"antessession:\s*(.*?)(?=recursos:|$)", re.DOTALL | re.IGNORECASE
-        ),
-        "recursos": re.compile(
-            r"recursos:\s*(.*?)(?=inicio:|$)", re.DOTALL | re.IGNORECASE
-        ),
-        "inicio": re.compile(
-            r"inicio:\s*(.*?)(?=situationproblem:|$)", re.DOTALL | re.IGNORECASE
-        ),
-        "situationproblem": re.compile(
-            r"situationproblem:\s*(.*?)(?=preguntassituation:|$)",
+        "campo_tematico": re.compile(
+            r"campo_tematico:\s*(.*?)(?=evidencia_proceso:|$)",
             re.DOTALL | re.IGNORECASE,
         ),
-        "preguntassituation": re.compile(
-            r"preguntassituation:\s*(.*?)(?=preguntainvestigation:|$)",
+        "evidencia_proceso": re.compile(
+            r"evidencia_proceso:\s*(.*?)(?=evidencia_producto_final:|$)",
             re.DOTALL | re.IGNORECASE,
         ),
-        "preguntainvestigation": re.compile(
-            r"preguntainvestigation:\s*(.*?)(?=hypothesis:|$)",
+        "evidencia_producto_final": re.compile(
+            r"evidencia_producto_final:\s*(.*?)(?=evidencia_actuacion:|$)",
             re.DOTALL | re.IGNORECASE,
         ),
-        "hypothesis": re.compile(
-            r"hypothesis:\s*(.*?)(?=preguntastema:|$)", re.DOTALL | re.IGNORECASE
+        "evidencia_actuacion": re.compile(
+            r"evidencia_actuacion:\s*(.*?)(?=criterio_desempeno:|$)",
+            re.DOTALL | re.IGNORECASE,
         ),
-        "preguntastema": re.compile(
-            r"preguntastema:\s*(.*)$", re.DOTALL | re.IGNORECASE
+        "criterio_desempeno": re.compile(
+            r"criterio_desempeno:\s*(.*?)(?=instrumento:|$)", re.DOTALL | re.IGNORECASE
         ),
+        "instrumento": re.compile(
+            r"instrumento:\s*(.*?)(?=proposito_aprendizaje:|$)",
+            re.DOTALL | re.IGNORECASE,
+        ),
+        "proposito_aprendizaje": re.compile(
+            r"proposito_aprendizaje:\s*(.*?)(?=introduccion:|$)",
+            re.DOTALL | re.IGNORECASE,
+        ),
+        "introduccion": re.compile(
+            r"introduccion:\s*(.*?)(?=desarrollo_contenidos:|$)",
+            re.DOTALL | re.IGNORECASE,
+        ),
+        "desarrollo_contenidos": re.compile(
+            r"desarrollo_contenidos:\s*(.*?)(?=desarrollo_actividades:|$)",
+            re.DOTALL | re.IGNORECASE,
+        ),
+        "desarrollo_actividades": re.compile(
+            r"desarrollo_actividades:\s*(.*?)(?=evaluacion_formativa:|$)",
+            re.DOTALL | re.IGNORECASE,
+        ),
+        "evaluacion_formativa": re.compile(
+            r"evaluacion_formativa:\s*(.*?)(?=retroalimentacion:|$)",
+            re.DOTALL | re.IGNORECASE,
+        ),
+        "retroalimentacion": re.compile(
+            r"retroalimentacion:\s*(.*?)(?=cierre:|$)", re.DOTALL | re.IGNORECASE
+        ),
+        "cierre": re.compile(
+            r"cierre:\s*(.*?)(?=extension:|$)", re.DOTALL | re.IGNORECASE
+        ),
+        "extension": re.compile(
+            r"extension:\s*(.*?)(?=rubrica:|$)", re.DOTALL | re.IGNORECASE
+        ),
+        "rubrica": re.compile(r"rubrica:\s*(.*)$", re.DOTALL | re.IGNORECASE),
     }
 
     sections = {}
@@ -83,4 +93,4 @@ def process_response(response):
         else:
             sections[key] = "Respuesta incompleta"
 
-    return tuple(sections[key] for key in patterns.keys())
+    return sections
