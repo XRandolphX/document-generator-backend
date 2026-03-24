@@ -1,7 +1,42 @@
+"""
+prompt.py
+---------
+Construcción del prompt estructurado que se envía al modelo de IA
+para generar el contenido de la sesión de aprendizaje.
+"""
+
+
 def modify_prompt(session_params: dict, teacher_profile: dict) -> str:
     """
     Construye el prompt para la IA a partir de los parámetros
     de la sesión y el perfil del docente.
+
+    El prompt instruye al modelo a responder en un formato de claves
+    predefinidas (e.g. ``proposito:``, ``rubrica:``), sin markdown ni
+    encabezados adicionales, para que ``parser.process_response()``
+    pueda extraer cada sección de forma determinista.
+
+    Args:
+        session_params (dict): Parámetros de la sesión de aprendizaje.
+            Claves esperadas:
+                - titulo (str): Título de la sesión.
+                - grado_seccion (str): Grado y sección del aula.
+                - numero_sesion (str): Número correlativo de la sesión.
+                - nombre_modulo (str): Nombre del módulo curricular.
+                - nombre_unidad (str): Nombre de la unidad didáctica.
+                - duracion (str): Duración total de la sesión (e.g. "90 min").
+                - materiales_recursos (str): Materiales y recursos utilizados.
+        teacher_profile (dict): Perfil del docente a cargo.
+            Claves esperadas:
+                - nombre_docente (str): Nombre completo del docente.
+                - institucion_educativa (str): Nombre de la institución.
+                - area (str): Área curricular.
+                - especialidad (str): Especialidad del docente.
+                - ciclo (str): Ciclo educativo (e.g. "VII").
+                - tipo_rubrica (str): Tipo de rúbrica ("Analítica" u "Holística").
+
+    Returns:
+        str: Prompt completo listo para enviarse al modelo de IA.
     """
     return (
         f"Eres un experto en planificación curricular del sistema educativo peruano. "
