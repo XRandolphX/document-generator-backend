@@ -65,7 +65,7 @@ def generate_document(session_params: dict, teacher_profile: dict) -> str:
     client = OpenAI(base_url="https://openrouter.ai/api/v1", api_key=API_KEY)
 
     response_iterator = client.chat.completions.create(
-        model="deepseek/deepseek-chat-v3-0324:free",
+        model="meta-llama/llama-3.3-70b-instruct:free",
         messages=[{"role": "user", "content": prompt}],
         stream=True,
     )
