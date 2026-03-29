@@ -24,7 +24,7 @@ def modify_prompt(session_params: dict, teacher_profile: dict) -> str:
                 - numero_sesion (str): Número correlativo de la sesión.
                 - nombre_modulo (str): Nombre del módulo curricular.
                 - nombre_unidad (str): Nombre de la unidad didáctica.
-                - duracion (str): Duración total de la sesión (e.g. "90 min").
+                - duracion_total (str): Duración total de la sesión (e.g. "90 min").
                 - materiales_recursos (str): Materiales y recursos utilizados.
         teacher_profile (dict): Perfil del docente a cargo.
             Claves esperadas:
@@ -54,7 +54,7 @@ def modify_prompt(session_params: dict, teacher_profile: dict) -> str:
         f"- Número de Sesión: {session_params['numero_sesion']}\n"
         f"- Nombre del Módulo: {session_params['nombre_modulo']}\n"
         f"- Nombre de la Unidad: {session_params['nombre_unidad']}\n"
-        f"- Duración Total: {session_params['duracion']}\n"
+        f"- Duración Total: {session_params['duracion_total']}\n"
         f"- Materiales y Recursos: {session_params['materiales_recursos']}\n\n"
         f"Responde ÚNICAMENTE en el siguiente formato exacto, sin markdown, "
         f"sin asteriscos, sin numerales, sin encabezados adicionales. "

@@ -114,7 +114,7 @@ def generate_document_endpoint():
             "numero_sesion",
             "nombre_modulo",
             "nombre_unidad",
-            "duracion",
+            "duracion_total",
             "materiales_recursos",
         ]
         for field in required_session_fields:
