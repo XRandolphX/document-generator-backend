@@ -12,6 +12,7 @@ Orquesta el flujo completo de producción del archivo final:
 """
 
 import os
+import re
 import subprocess
 from datetime import datetime
 from pathlib import Path
@@ -22,6 +23,27 @@ from openai import OpenAI
 from ai_doc.config import API_KEY
 from ai_doc.core.parser import process_response
 from ai_doc.core.prompt import modify_prompt
+
+
+def calcular_tiempos(duracion_total: str) -> dict:
+    match = re.search(r"\d+", duracion_total)
+    total = int(match.group()) if match else 90
+
+    proporciones = {
+        "tiempo_proposito_aprendizaje": 0.056,
+        "tiempo_introduccion": 0.111,
+        "tiempo_desarrollo_contenidos": 0.167,
+        "tiempo_desarrollo_actividades": 0.389,
+        "tiempo_evaluacion_formativa": 0.111,
+        "tiempo_retroalimentacion": 0.056,
+        "tiempo_cierre": 0.056,
+        "tiempo_extension": 0.056,
+    }
+
+    return {
+        clave: f"{round(total * proporcion)} min"
+        for clave, proporcion in proporciones.items()
+    }
 
 
 def generate_document(session_params: dict, teacher_profile: dict) -> str:
@@ -65,7 +87,7 @@ def generate_document(session_params: dict, teacher_profile: dict) -> str:
     client = OpenAI(base_url="https://openrouter.ai/api/v1", api_key=API_KEY)
 
     response_iterator = client.chat.completions.create(
-        model="meta-llama/llama-3.3-70b-instruct:free",
+        model="deepseek/deepseek-chat",
         messages=[{"role": "user", "content": prompt}],
         stream=True,
     )
@@ -79,6 +101,7 @@ def generate_document(session_params: dict, teacher_profile: dict) -> str:
     full_reply_content = "".join(collected_messages)
 
     sections = process_response(full_reply_content)
+    tiempos = calcular_tiempos(session_params["duracion_total"])
 
     context = {
         # Datos del docente
@@ -95,7 +118,7 @@ def generate_document(session_params: dict, teacher_profile: dict) -> str:
         "nombre_modulo": session_params["nombre_modulo"],
         "nombre_unidad": session_params["nombre_unidad"],
         "fecha": session_params.get("fecha", datetime.today().strftime("%d %b, %Y")),
-        "duracion": session_params["duracion"],
+        "duracion_total": session_params["duracion_total"],
         "materiales_recursos": session_params["materiales_recursos"],
         # Contenido generado por la IA
         "proposito": sections["proposito"],
@@ -116,13 +139,15 @@ def generate_document(session_params: dict, teacher_profile: dict) -> str:
         "cierre": sections["cierre"],
         "extension": sections["extension"],
         "rubrica": sections["rubrica"],
+        # Distribución de tiempos por proceso didáctico
+        **tiempos,
     }
 
     output_dir = Path(__file__).parent.parent / "generated_files"
     output_dir.mkdir(exist_ok=True)
     doc_path = output_dir / "document_generated.docx"
 
-    template_path = Path(__file__).parent.parent / "templates" / "class_template.docx"
+    template_path = Path(__file__).parent.parent / "templates" / "sesion_template.docx"
     doc = DocxTemplate(template_path)
     doc.render(context)
     doc.save(doc_path)
