@@ -15,8 +15,12 @@ def remove_markdown(text: str) -> str:
 
     Remueve los siguientes elementos:
         - Encabezados (``#`` al inicio de línea).
-        - Énfasis y código en línea (``*``, ``_``, `` ` ``).
+        - Énfasis y código en línea (``*``, `` ` ``).
         - Caracteres especiales de cita y enlace (``>``, ``[``, ``]``).
+
+    Note:
+        Los guiones bajos (``_``) no se eliminan para preservar
+        los nombres de clave con underscore (e.g. ``indicador_logro``).
 
     Args:
         text (str): Texto con posible formato Markdown.
@@ -25,7 +29,7 @@ def remove_markdown(text: str) -> str:
         str: Texto limpio sin marcadores Markdown.
     """
     text = re.sub(r"^\s*#{1,6}\s*", "", text, flags=re.MULTILINE)
-    text = re.sub(r"[*_`]", "", text)
+    text = re.sub(r"[*`]", "", text)
     text = re.sub(r"[>\[\]]", "", text)
     return text
 
@@ -37,11 +41,10 @@ def process_response(response: str) -> dict:
 
     Normaliza los espacios en blanco, elimina el formato Markdown y aplica
     expresiones regulares para extraer el contenido de cada clave esperada.
+    Los patrones aceptan claves con o sin guión bajo (e.g. ``indicador_logro``
+    o ``indicadorlogro``) para tolerar variaciones en la respuesta del modelo.
     Si una sección no se encuentra en la respuesta, se asigna el valor
     ``"Respuesta incompleta"`` como fallback.
-
-    Las secciones extraídas siguen el orden del formato solicitado al modelo
-    en ``prompt.modify_prompt()``.
 
     Args:
         response (str): Texto completo devuelto por el modelo de IA,
@@ -79,55 +82,56 @@ def process_response(response: str) -> dict:
 
     patterns = {
         "proposito": re.compile(
-            r"proposito:\s*(.*?)(?=indicador_logro:|$)", re.DOTALL | re.IGNORECASE
+            r"proposito:\s*(.*?)(?=indicador_?logro:|$)", re.DOTALL | re.IGNORECASE
         ),
         "indicador_logro": re.compile(
-            r"indicador_logro:\s*(.*?)(?=desempeno:|$)", re.DOTALL | re.IGNORECASE
+            r"indicador_?logro:\s*(.*?)(?=desempe[nñ]o:|$)", re.DOTALL | re.IGNORECASE
         ),
         "desempeno": re.compile(
-            r"desempeno:\s*(.*?)(?=campo_tematico:|$)", re.DOTALL | re.IGNORECASE
+            r"desempe[nñ]o:\s*(.*?)(?=campo_?tematico:|$)", re.DOTALL | re.IGNORECASE
         ),
         "campo_tematico": re.compile(
-            r"campo_tematico:\s*(.*?)(?=evidencia_proceso:|$)",
+            r"campo_?tematico:\s*(.*?)(?=evidencia_?proceso:|$)",
             re.DOTALL | re.IGNORECASE,
         ),
         "evidencia_proceso": re.compile(
-            r"evidencia_proceso:\s*(.*?)(?=evidencia_producto_final:|$)",
+            r"evidencia_?proceso:\s*(.*?)(?=evidencia_?producto_?final:|$)",
             re.DOTALL | re.IGNORECASE,
         ),
         "evidencia_producto_final": re.compile(
-            r"evidencia_producto_final:\s*(.*?)(?=evidencia_actuacion:|$)",
+            r"evidencia_?producto_?final:\s*(.*?)(?=evidencia_?actuacion:|$)",
             re.DOTALL | re.IGNORECASE,
         ),
         "evidencia_actuacion": re.compile(
-            r"evidencia_actuacion:\s*(.*?)(?=criterio_desempeno:|$)",
+            r"evidencia_?actuacion:\s*(.*?)(?=criterio_?desempe[nñ]o:|$)",
             re.DOTALL | re.IGNORECASE,
         ),
         "criterio_desempeno": re.compile(
-            r"criterio_desempeno:\s*(.*?)(?=instrumento:|$)", re.DOTALL | re.IGNORECASE
+            r"criterio_?desempe[nñ]o:\s*(.*?)(?=instrumento:|$)",
+            re.DOTALL | re.IGNORECASE,
         ),
         "instrumento": re.compile(
-            r"instrumento:\s*(.*?)(?=proposito_aprendizaje:|$)",
+            r"instrumento:\s*(.*?)(?=proposito_?aprendizaje:|$)",
             re.DOTALL | re.IGNORECASE,
         ),
         "proposito_aprendizaje": re.compile(
-            r"proposito_aprendizaje:\s*(.*?)(?=introduccion:|$)",
+            r"proposito_?aprendizaje:\s*(.*?)(?=introduccion:|$)",
             re.DOTALL | re.IGNORECASE,
         ),
         "introduccion": re.compile(
-            r"introduccion:\s*(.*?)(?=desarrollo_contenidos:|$)",
+            r"introduccion:\s*(.*?)(?=desarrollo_?contenidos:|$)",
             re.DOTALL | re.IGNORECASE,
         ),
         "desarrollo_contenidos": re.compile(
-            r"desarrollo_contenidos:\s*(.*?)(?=desarrollo_actividades:|$)",
+            r"desarrollo_?contenidos:\s*(.*?)(?=desarrollo_?actividades:|$)",
             re.DOTALL | re.IGNORECASE,
         ),
         "desarrollo_actividades": re.compile(
-            r"desarrollo_actividades:\s*(.*?)(?=evaluacion_formativa:|$)",
+            r"desarrollo_?actividades:\s*(.*?)(?=evaluacion_?formativa:|$)",
             re.DOTALL | re.IGNORECASE,
         ),
         "evaluacion_formativa": re.compile(
-            r"evaluacion_formativa:\s*(.*?)(?=retroalimentacion:|$)",
+            r"evaluacion_?formativa:\s*(.*?)(?=retroalimentacion:|$)",
             re.DOTALL | re.IGNORECASE,
         ),
         "retroalimentacion": re.compile(
