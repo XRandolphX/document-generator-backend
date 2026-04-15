@@ -24,7 +24,7 @@ def modify_prompt(session_params: dict, teacher_profile: dict) -> str:
                 - numero_sesion (str): Número correlativo de la sesión.
                 - nombre_modulo (str): Nombre del módulo curricular.
                 - nombre_unidad (str): Nombre de la unidad didáctica.
-                - duracion (str): Duración total de la sesión (e.g. "90 min").
+                - duracion_total (str): Duración total de la sesión (e.g. "90 min").
                 - materiales_recursos (str): Materiales y recursos utilizados.
         teacher_profile (dict): Perfil del docente a cargo.
             Claves esperadas:
@@ -54,7 +54,7 @@ def modify_prompt(session_params: dict, teacher_profile: dict) -> str:
         f"- Número de Sesión: {session_params['numero_sesion']}\n"
         f"- Nombre del Módulo: {session_params['nombre_modulo']}\n"
         f"- Nombre de la Unidad: {session_params['nombre_unidad']}\n"
-        f"- Duración Total: {session_params['duracion']}\n"
+        f"- Duración Total: {session_params['duracion_total']}\n"
         f"- Materiales y Recursos: {session_params['materiales_recursos']}\n\n"
         f"Responde ÚNICAMENTE en el siguiente formato exacto, sin markdown, "
         f"sin asteriscos, sin numerales, sin encabezados adicionales. "
@@ -76,5 +76,10 @@ def modify_prompt(session_params: dict, teacher_profile: dict) -> str:
         f"retroalimentacion: ...\n"
         f"cierre: ...\n"
         f"extension: ...\n"
-        f"rubrica: ...\n"
+        f"rubrica: Genera una rúbrica {teacher_profile['tipo_rubrica']} basada en los campos temáticos de la sesión. "
+        f"Usa como referencia el desempeño y los criterios de desempeño proporcionados. "
+        f"El nivel 'Logro Esperado' debe derivarse del desempeño, y los demás niveles (Logro Destacado, En Proceso, En Inicio) deben derivarse de este. "
+        f"Responde ÚNICAMENTE con un JSON válido, sin texto adicional, sin markdown, sin comillas extras. "
+        f"El formato debe ser exactamente este:\n"
+        f'[{{"criterio": "Nombre del criterio", "logro_destacado": "...", "logro_esperado": "...", "en_proceso": "...", "en_inicio": "..."}}]\n'
     )
