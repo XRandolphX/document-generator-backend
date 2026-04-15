@@ -6,6 +6,7 @@ modelo de IA. Extrae cada sección de la sesión de aprendizaje mediante
 expresiones regulares y las organiza en un diccionario estructurado.
 """
 
+import json
 import re
 
 
@@ -154,5 +155,16 @@ def process_response(response: str) -> dict:
             sections[key] = match.group(1).strip()
         else:
             sections[key] = "Respuesta incompleta"
+
+    # Parsear rubrica como JSON -> lista de dicts
+    rubrica_raw = sections.get("rubrica", "")
+
+    try:
+        # Envolver en [] si la IA no los incluyó
+        if rubrica_raw.strip() and not rubrica_raw.strip().startswith("["):
+            rubrica_raw = f"[{rubrica_raw}]"
+        sections["rubrica"] = json.loads(rubrica_raw)
+    except (json.JSONDecodeError, TypeError):
+        sections["rubrica"] = []
 
     return sections
