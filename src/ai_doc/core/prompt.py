@@ -12,28 +12,40 @@ def modify_prompt(session_params: dict, teacher_profile: dict) -> str:
     de la sesión y el perfil del docente.
 
     El prompt instruye al modelo a responder en un formato de claves
-    predefinidas (e.g. ``proposito:``, ``rubrica:``), sin markdown ni
-    encabezados adicionales, para que ``parser.process_response()``
-    pueda extraer cada sección de forma determinista.
+    predefinidas (por ejemplo, ``proposito:``, ``rubrica:``), sin
+    markdown ni encabezados adicionales, para que
+    ``parser.process_response()`` pueda extraer cada sección de forma
+    determinista.
+
+    La rúbrica se solicita en formato JSON con los niveles de logro
+    ``logro_destacado``, ``logro_esperado``, ``en_proceso`` y
+    ``en_inicio``, derivados del desempeño y los criterios de la sesión.
+    El tipo de rúbrica (``"Analítica"`` u ``"Holística"``) determina
+    su estructura.
 
     Args:
         session_params (dict): Parámetros de la sesión de aprendizaje.
             Claves esperadas:
-                - titulo (str): Título de la sesión.
-                - grado_seccion (str): Grado y sección del aula.
-                - numero_sesion (str): Número correlativo de la sesión.
-                - nombre_modulo (str): Nombre del módulo curricular.
-                - nombre_unidad (str): Nombre de la unidad didáctica.
-                - duracion_total (str): Duración total de la sesión (e.g. "90 min").
-                - materiales_recursos (str): Materiales y recursos utilizados.
+
+            - ``titulo`` (str): Título de la sesión.
+            - ``grado_seccion`` (str): Grado y sección del aula.
+            - ``numero_sesion`` (str): Número correlativo de la sesión.
+            - ``nombre_modulo`` (str): Nombre del módulo curricular.
+            - ``nombre_unidad`` (str): Nombre de la unidad didáctica.
+            - ``duracion_total`` (str): Duración total (por ejemplo,
+              ``"90 min"``).
+            - ``materiales_recursos`` (str): Materiales y recursos.
+
         teacher_profile (dict): Perfil del docente a cargo.
             Claves esperadas:
-                - nombre_docente (str): Nombre completo del docente.
-                - institucion_educativa (str): Nombre de la institución.
-                - area (str): Área curricular.
-                - especialidad (str): Especialidad del docente.
-                - ciclo (str): Ciclo educativo (e.g. "VII").
-                - tipo_rubrica (str): Tipo de rúbrica ("Analítica" u "Holística").
+
+            - ``nombre_docente`` (str): Nombre completo del docente.
+            - ``institucion_educativa`` (str): Nombre de la institución.
+            - ``area`` (str): Área curricular.
+            - ``especialidad`` (str): Especialidad del docente.
+            - ``ciclo`` (str): Ciclo educativo (por ejemplo, ``"VII"``).
+            - ``tipo_rubrica`` (str): Tipo de rúbrica
+              (``"Analítica"`` u ``"Holística"``).
 
     Returns:
         str: Prompt completo listo para enviarse al modelo de IA.
@@ -76,10 +88,14 @@ def modify_prompt(session_params: dict, teacher_profile: dict) -> str:
         f"retroalimentacion: ...\n"
         f"cierre: ...\n"
         f"extension: ...\n"
-        f"rubrica: Genera una rúbrica {teacher_profile['tipo_rubrica']} basada en los campos temáticos de la sesión. "
+        f"rubrica: Genera una rúbrica {teacher_profile['tipo_rubrica']} basada en los campos "
+        f"temáticos de la sesión. "
         f"Usa como referencia el desempeño y los criterios de desempeño proporcionados. "
-        f"El nivel 'Logro Esperado' debe derivarse del desempeño, y los demás niveles (Logro Destacado, En Proceso, En Inicio) deben derivarse de este. "
-        f"Responde ÚNICAMENTE con un JSON válido, sin texto adicional, sin markdown, sin comillas extras. "
+        f"El nivel 'Logro Esperado' debe derivarse del desempeño, y los demás niveles "
+        f"(Logro Destacado, En Proceso, En Inicio) deben derivarse de este. "
+        f"Responde ÚNICAMENTE con un JSON válido, sin texto adicional, sin markdown, "
+        f"sin comillas extras. "
         f"El formato debe ser exactamente este:\n"
-        f'[{{"criterio": "Nombre del criterio", "logro_destacado": "...", "logro_esperado": "...", "en_proceso": "...", "en_inicio": "..."}}]\n'
+        f'[{{"criterio": "Nombre del criterio", "logro_destacado": "...", "logro_esperado": "...", '
+        f'"en_proceso": "...", "en_inicio": "..."}}]\n'
     )

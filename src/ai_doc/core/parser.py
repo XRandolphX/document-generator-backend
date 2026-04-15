@@ -15,13 +15,15 @@ def remove_markdown(text: str) -> str:
     Elimina formato Markdown del texto.
 
     Remueve los siguientes elementos:
-        - Encabezados (``#`` al inicio de línea).
-        - Énfasis y código en línea (``*``, `` ` ``).
-        - Caracteres especiales de cita y enlace (``>``, ``[``, ``]``).
+
+    - Encabezados (``#`` al inicio de línea).
+    - Énfasis y código en línea (``*``, `` ` ``).
+    - Caracteres especiales de cita y enlace (``>``, ``[``, ``]``).
 
     Note:
         Los guiones bajos (``_``) no se eliminan para preservar
-        los nombres de clave con underscore (e.g. ``indicador_logro``).
+        los nombres de clave con underscore (por ejemplo,
+        ``indicador_logro``).
 
     Args:
         text (str): Texto con posible formato Markdown.
@@ -42,41 +44,54 @@ def process_response(response: str) -> dict:
 
     Normaliza los espacios en blanco, elimina el formato Markdown y aplica
     expresiones regulares para extraer el contenido de cada clave esperada.
-    Los patrones aceptan claves con o sin guión bajo (e.g. ``indicador_logro``
-    o ``indicadorlogro``) para tolerar variaciones en la respuesta del modelo.
+
+    Los patrones aceptan claves con o sin guión bajo (por ejemplo,
+    ``indicador_logro`` o ``indicadorlogro``) para tolerar variaciones
+    menores en la respuesta del modelo.
+
     Si una sección no se encuentra en la respuesta, se asigna el valor
     ``"Respuesta incompleta"`` como fallback.
 
+    La clave ``rubrica`` recibe un tratamiento especial: su contenido se
+    parsea como JSON y se devuelve como lista de diccionarios. Si el
+    parseo falla, se devuelve una lista vacía.
+
     Args:
         response (str): Texto completo devuelto por el modelo de IA,
-            con el formato ``clave: contenido`` por línea.
+            con el formato ``clave: contenido`` por sección.
 
     Returns:
         dict: Diccionario con una entrada por cada sección de la sesión.
             Claves del diccionario:
-                - proposito
-                - indicador_logro
-                - desempeno
-                - campo_tematico
-                - evidencia_proceso
-                - evidencia_producto_final
-                - evidencia_actuacion
-                - criterio_desempeno
-                - instrumento
-                - proposito_aprendizaje
-                - introduccion
-                - desarrollo_contenidos
-                - desarrollo_actividades
-                - evaluacion_formativa
-                - retroalimentacion
-                - cierre
-                - extension
-                - rubrica
+
+            - ``proposito``
+            - ``indicador_logro``
+            - ``desempeno``
+            - ``campo_tematico``
+            - ``evidencia_proceso``
+            - ``evidencia_producto_final``
+            - ``evidencia_actuacion``
+            - ``criterio_desempeno``
+            - ``instrumento``
+            - ``proposito_aprendizaje``
+            - ``introduccion``
+            - ``desarrollo_contenidos``
+            - ``desarrollo_actividades``
+            - ``evaluacion_formativa``
+            - ``retroalimentacion``
+            - ``cierre``
+            - ``extension``
+            - ``rubrica`` (list[dict]): Lista de criterios de la rúbrica.
+              Cada dict contiene las claves ``criterio``,
+              ``logro_destacado``, ``logro_esperado``, ``en_proceso``
+              y ``en_inicio``.
 
     Example:
         >>> sections = process_response(ai_raw_text)
         >>> print(sections["proposito"])
         'Que los estudiantes consoliden...'
+        >>> print(sections["rubrica"])
+        [{"criterio": "...", "logro_esperado": "...", ...}]
     """
     cleaned_response = re.sub(r"\s+", " ", response).strip()
     cleaned_response = remove_markdown(cleaned_response)
@@ -148,7 +163,6 @@ def process_response(response: str) -> dict:
     }
 
     sections = {}
-
     for key, pattern in patterns.items():
         match = pattern.search(cleaned_response)
         if match:
@@ -158,9 +172,8 @@ def process_response(response: str) -> dict:
 
     # Parsear rubrica como JSON -> lista de dicts
     rubrica_raw = sections.get("rubrica", "")
-
     try:
-        # Envolver en [] si la IA no los incluyó
+        # Envolver en [] si la IA omitió los corchetes externos
         if rubrica_raw.strip() and not rubrica_raw.strip().startswith("["):
             rubrica_raw = f"[{rubrica_raw}]"
         sections["rubrica"] = json.loads(rubrica_raw)
