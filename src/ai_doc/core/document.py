@@ -5,7 +5,7 @@ Generación del documento Word y conversión a PDF.
 
 Orquesta el flujo completo de producción del archivo final:
     1. Construye el prompt con ``prompt.modify_prompt()``.
-    2. Llama al modelo DeepSeek vía OpenRouter en modo streaming.
+    2. Llama al modelo DeepSeek, OpenAI o el que gustes vía OpenRouter en modo streaming.
     3. Parsea la respuesta con ``parser.process_response()``.
     4. Rellena la plantilla Word con ``DocxTemplate``.
     5. Convierte el ``.docx`` generado a PDF mediante LibreOffice.
@@ -26,6 +26,31 @@ from ai_doc.core.prompt import modify_prompt
 
 
 def calcular_tiempos(duracion_total: str) -> dict:
+    """
+    Calcula la distribución de tiempos por proceso didáctico
+    en función de la duración total de la sesión.
+
+    Extrae el valor numérico de ``duracion_total`` y lo distribuye
+    proporcionalmente entre los ocho momentos de la sesión. Si no se
+    encuentra un número válido, usa 90 minutos como valor por defecto.
+
+    Args:
+        duracion_total (str): Duración total de la sesión, por ejemplo
+            ``"90 min"`` o ``"120 minutos"``.
+
+    Returns:
+        dict: Diccionario con ocho claves, cada una con el tiempo
+        asignado en formato ``"N min"``. Claves:
+
+        - ``tiempo_proposito_aprendizaje``
+        - ``tiempo_introduccion``
+        - ``tiempo_desarrollo_contenidos``
+        - ``tiempo_desarrollo_actividades``
+        - ``tiempo_evaluacion_formativa``
+        - ``tiempo_retroalimentacion``
+        - ``tiempo_cierre``
+        - ``tiempo_extension``
+    """
     match = re.search(r"\d+", duracion_total)
     total = int(match.group()) if match else 90
 
@@ -54,19 +79,20 @@ def generate_document(session_params: dict, teacher_profile: dict) -> str:
     Flujo interno:
         1. Invoca ``modify_prompt()`` para construir el prompt.
         2. Realiza una solicitud en streaming al modelo
-           ``deepseek/deepseek-chat-v3-0324:free`` vía OpenRouter.
+           ``deepseek/deepseek-chat`` vía OpenRouter.
         3. Concatena los chunks de la respuesta y los procesa con
            ``process_response()``.
-        4. Combina los datos del docente, los parámetros de sesión y el
-           contenido generado en un contexto para ``DocxTemplate``.
-        5. Renderiza la plantilla ``class_template.docx`` y guarda el
+        4. Combina los datos del docente, los parámetros de sesión, la
+        distribución de tiempos y el contenido generado en un contexto
+        para ``DocxTemplate``.
+        5. Renderiza la plantilla ``sesion_template.docx`` y guarda el
            archivo resultante en ``generated_files/document_generated.docx``.
 
     Args:
         session_params (dict): Parámetros de la sesión de aprendizaje.
             Claves obligatorias: ``titulo``, ``grado_seccion``,
             ``numero_sesion``, ``nombre_modulo``, ``nombre_unidad``,
-            ``duracion``, ``materiales_recursos``.
+            ``duracion_total``, ``materiales_recursos``.
             Clave opcional: ``fecha`` (si se omite, se usa la fecha actual
             con formato ``"%d %b, %Y"``).
         teacher_profile (dict): Perfil del docente.
@@ -78,7 +104,8 @@ def generate_document(session_params: dict, teacher_profile: dict) -> str:
 
     Raises:
         openai.APIError: Si la solicitud a la API de OpenRouter falla.
-        FileNotFoundError: Si la plantilla ``class_template.docx`` no existe.
+        FileNotFoundError: Si la plantilla ``sesion_template.docx``
+            no existe en el directorio ``templates/``
         Exception: Cualquier error inesperado durante el renderizado o guardado
             del documento.
     """
@@ -92,6 +119,7 @@ def generate_document(session_params: dict, teacher_profile: dict) -> str:
         stream=True,
     )
 
+    # Acumular todos los chunks del stream antes de parsear
     collected_messages = []
     for chunk in response_iterator:
         delta_obj = chunk.choices[0].delta
@@ -99,11 +127,7 @@ def generate_document(session_params: dict, teacher_profile: dict) -> str:
         collected_messages.append(content)
 
     full_reply_content = "".join(collected_messages)
-
     sections = process_response(full_reply_content)
-    print("=== RUBRICA RAW ===")
-    print(repr(sections["rubrica"]))
-    print("===================")
     tiempos = calcular_tiempos(session_params["duracion_total"])
 
     context = {
@@ -184,7 +208,7 @@ def convert_to_pdf(doc_path: str) -> str:
         Requiere que ``soffice`` (LibreOffice) esté instalado y disponible
         en el PATH del sistema. En entornos de despliegue como Railway puede
         ser necesario configurar un buildpack adicional o usar una alternativa
-        como Gotenberg.
+        como Gotenberg (https://gotenberg.dev).
     """
     if not os.path.isfile(doc_path):
         raise FileNotFoundError(f"El archivo {doc_path} no existe.")

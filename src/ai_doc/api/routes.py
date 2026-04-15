@@ -4,7 +4,7 @@ routes.py
 Definición de los endpoints de la API Flask.
 
 Expone dos rutas:
-    - ``GET /``              : Health check de la API.
+    - ``GET /``                   : Health check de la API.
     - ``POST /generate-document`` : Genera una sesión de aprendizaje en Word y PDF.
 """
 
@@ -44,7 +44,7 @@ def generate_document_endpoint():
             ``especialidad``, ``ciclo``, ``tipo_rubrica``.
         session_params (dict): Parámetros de la sesión. Campos obligatorios:
             ``titulo``, ``grado_seccion``, ``numero_sesion``,
-            ``nombre_modulo``, ``nombre_unidad``, ``duracion``,
+            ``nombre_modulo``, ``nombre_unidad``, ``duracion_total``,
             ``materiales_recursos``. Campo opcional: ``fecha``.
 
     Returns:
