@@ -76,5 +76,10 @@ def modify_prompt(session_params: dict, teacher_profile: dict) -> str:
         f"retroalimentacion: ...\n"
         f"cierre: ...\n"
         f"extension: ...\n"
-        f"rubrica: ...\n"
+        f"rubrica: Genera una rúbrica {teacher_profile['tipo_rubrica']} basada en los campos temáticos de la sesión. "
+        f"Usa como referencia el desempeño y los criterios de desempeño proporcionados. "
+        f"El nivel 'Logro Esperado' debe derivarse del desempeño, y los demás niveles (Logro Destacado, En Proceso, En Inicio) deben derivarse de este. "
+        f"Responde ÚNICAMENTE con un JSON válido, sin texto adicional, sin markdown, sin comillas extras. "
+        f"El formato debe ser exactamente este:\n"
+        f'[{{"criterio": "Nombre del criterio", "logro_destacado": "...", "logro_esperado": "...", "en_proceso": "...", "en_inicio": "..."}}]\n'
     )
