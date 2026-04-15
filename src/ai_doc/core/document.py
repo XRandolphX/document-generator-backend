@@ -101,6 +101,9 @@ def generate_document(session_params: dict, teacher_profile: dict) -> str:
     full_reply_content = "".join(collected_messages)
 
     sections = process_response(full_reply_content)
+    print("=== RUBRICA RAW ===")
+    print(repr(sections["rubrica"]))
+    print("===================")
     tiempos = calcular_tiempos(session_params["duracion_total"])
 
     context = {
@@ -138,7 +141,7 @@ def generate_document(session_params: dict, teacher_profile: dict) -> str:
         "retroalimentacion": sections["retroalimentacion"],
         "cierre": sections["cierre"],
         "extension": sections["extension"],
-        "rubrica": sections["rubrica"],
+        "filas_rubrica": sections["rubrica"],
         # Distribución de tiempos por proceso didáctico
         **tiempos,
     }
