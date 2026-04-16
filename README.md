@@ -204,7 +204,7 @@ Genera una sesión de aprendizaje completa en formato Word y PDF.
 {
   "teacher_profile": {
     "nombre_docente": "Randolph Fabrizio Ramirez Palacios",
-    "institucion_educativa": "Fe y Alegría 18 - Sullana",
+    "institucion_educativa": "Institución Educativa Randix - Sullana",
     "area": "Educación para el Trabajo",
     "especialidad": "Computación e Informática",
     "ciclo": "VII",
@@ -333,5 +333,4 @@ git push origin main
 ## Autor
 
 **Randolph Fabrizio Ramirez Palacios**
-Institución Educativa Fe y Alegría 18 — Sullana, Perú
-[GitHub](https://github.com/tu-usuario)
+[GitHub](https://github.com/XRandolphX)
