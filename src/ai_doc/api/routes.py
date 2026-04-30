@@ -1,11 +1,11 @@
 """
 routes.py
 ---------
-Definición de los endpoints de la API Flask.
+Flask API endpoint definitions.
 
-Expone dos rutas:
-    - ``GET /``                   : Health check de la API.
-    - ``POST /generate-document`` : Genera una sesión de aprendizaje en Word y PDF.
+Exposes two routes:
+    - ``GET /``                   : API health check.
+    - ``POST /generate-document`` : Generates a learning session in Word and PDF format.
 """
 
 from flask import Flask, jsonify, request
@@ -20,70 +20,68 @@ CORS(app)
 @app.route("/")
 def index():
     """
-    Health check de la API.
+    API health check.
 
     Returns:
-        str: Mensaje de confirmación indicando que la API está activa.
+        str: Confirmation message indicating the API is active.
     """
-    return "API de Flask está funcionando!"
+    return "Flask API is running!"
 
 
 @app.route("/generate-document", methods=["POST"])
 def generate_document_endpoint():
     """
-    Genera un documento Word y su versión en PDF a partir de los datos
-    del docente y los parámetros de la sesión de aprendizaje.
+    Generates a Word document and its PDF version from the teacher
+    profile and learning session parameters.
 
-    Valida la presencia y completitud de los campos obligatorios en el
-    cuerpo de la solicitud antes de delegar la generación a
-    ``document.generate_document()`` y ``document.convert_to_pdf()``.
+    Validates the presence and completeness of all required fields in
+    the request body before delegating generation to
+    ``document.generate_document()`` and ``document.convert_to_pdf()``.
 
     Request Body (JSON):
-        teacher_profile (dict): Perfil del docente. Campos obligatorios:
+        teacher_profile (dict): Teacher profile. Required fields:
             ``nombre_docente``, ``institucion_educativa``, ``area``,
             ``especialidad``, ``ciclo``, ``tipo_rubrica``.
-        session_params (dict): Parámetros de la sesión. Campos obligatorios:
+        session_params (dict): Session parameters. Required fields:
             ``titulo``, ``grado_seccion``, ``numero_sesion``,
             ``nombre_modulo``, ``nombre_unidad``, ``duracion_total``,
-            ``materiales_recursos``. Campo opcional: ``fecha``.
+            ``materiales_recursos``. Optional field: ``fecha``.
 
     Returns:
-        Response: JSON con los siguientes campos posibles:
+        Response: JSON with the following possible fields:
 
-        - **200 OK** – Generación exitosa::
+        - **200 OK** – Successful generation::
 
             {
                 "success": true,
-                "docx_path": "/ruta/document_generated.docx",
-                "pdf_path": "/ruta/document_generated.pdf"
+                "docx_path": "/path/to/document_generated.docx",
+                "pdf_path": "/path/to/document_generated.pdf"
             }
 
-        - **400 Bad Request** – Datos faltantes o inválidos::
+        - **400 Bad Request** – Missing or invalid data::
 
-            {"success": false, "error": "Descripción del campo faltante."}
+            {"success": false, "error": "Description of the missing field."}
 
-        - **404 Not Found** – Plantilla o archivo no encontrado::
+        - **404 Not Found** – Template or file not found::
 
-            {"success": false, "error": "Archivo no encontrado: ..."}
+            {"success": false, "error": "File not found: ..."}
 
-        - **500 Internal Server Error** – Error en la generación o error
-          inesperado::
+        - **500 Internal Server Error** – Generation error or unexpected
+          failure::
 
-            {"success": false, "error": "Descripción del error."}
+            {"success": false, "error": "Error description."}
     """
     try:
         data = request.get_json()
 
         if not data:
-            return jsonify(
-                success=False, error="No se recibieron datos en la solicitud."
-            ), 400
+            return jsonify(success=False, error="No data received in the request."), 400
 
-        # Validar perfil del docente
+        # Validate teacher profile
         teacher_profile = data.get("teacher_profile")
         if not teacher_profile:
             return jsonify(
-                success=False, error="El campo 'teacher_profile' es obligatorio."
+                success=False, error="The 'teacher_profile' field is required."
             ), 400
 
         required_teacher_fields = [
@@ -98,14 +96,14 @@ def generate_document_endpoint():
             if not teacher_profile.get(field):
                 return jsonify(
                     success=False,
-                    error=f"El campo '{field}' del perfil del docente es obligatorio.",
+                    error=f"The '{field}' field in teacher_profile is required.",
                 ), 400
 
-        # Validar parámetros de la sesión
+        # Validate session parameters
         session_params = data.get("session_params")
         if not session_params:
             return jsonify(
-                success=False, error="El campo 'session_params' es obligatorio."
+                success=False, error="The 'session_params' field is required."
             ), 400
 
         required_session_fields = [
@@ -121,34 +119,33 @@ def generate_document_endpoint():
             if not session_params.get(field):
                 return jsonify(
                     success=False,
-                    error=f"El campo '{field}' de la sesión es obligatorio.",
+                    error=f"The '{field}' field in session_params is required.",
                 ), 400
 
+        # Generate Word document and convert to PDF
         doc_path = generate_document(session_params, teacher_profile)
         pdf_path = convert_to_pdf(doc_path)
 
         return jsonify(success=True, pdf_path=pdf_path, docx_path=doc_path), 200
 
     except FileNotFoundError as e:
-        return jsonify(success=False, error=f"Archivo no encontrado: {str(e)}"), 404
+        return jsonify(success=False, error=f"File not found: {str(e)}"), 404
 
     except RuntimeError as e:
-        return jsonify(
-            success=False, error=f"Error en la generación del documento: {str(e)}"
-        ), 500
+        return jsonify(success=False, error=f"Document generation error: {str(e)}"), 500
 
     except Exception as e:
-        return jsonify(success=False, error=f"Error inesperado: {str(e)}"), 500
+        return jsonify(success=False, error=f"Unexpected error: {str(e)}"), 500
 
 
 def create_app():
     """
-    Factoría de la aplicación Flask.
+    Flask application factory.
 
-    Permite crear la instancia de ``app`` desde un punto de entrada
-    externo (e.g. para testing o despliegue con Gunicorn).
+    Allows the ``app`` instance to be created from an external entry
+    point (e.g. for testing or deployment with Gunicorn).
 
     Returns:
-        Flask: Instancia configurada de la aplicación.
+        Flask: Configured Flask application instance.
     """
     return app

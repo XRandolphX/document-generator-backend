@@ -1,54 +1,52 @@
 """
 prompt.py
 ---------
-Construcción del prompt estructurado que se envía al modelo de IA
-para generar el contenido de la sesión de aprendizaje.
+Builds the structured prompt sent to the AI model to generate
+the learning session content.
 """
 
 
 def modify_prompt(session_params: dict, teacher_profile: dict) -> str:
     """
-    Construye el prompt para la IA a partir de los parámetros
-    de la sesión y el perfil del docente.
+    Builds the prompt for the AI model from the session parameters
+    and the teacher profile.
 
-    El prompt instruye al modelo a responder en un formato de claves
-    predefinidas (por ejemplo, ``proposito:``, ``rubrica:``), sin
-    markdown ni encabezados adicionales, para que
-    ``parser.process_response()`` pueda extraer cada sección de forma
-    determinista.
+    The prompt instructs the model to respond in a format of predefined
+    keys (e.g. ``proposito:``, ``rubrica:``), without markdown or
+    additional headers, so that ``parser.process_response()`` can extract
+    each section deterministically.
 
-    La rúbrica se solicita en formato JSON con los niveles de logro
-    ``logro_destacado``, ``logro_esperado``, ``en_proceso`` y
-    ``en_inicio``, derivados del desempeño y los criterios de la sesión.
-    El tipo de rúbrica (``"Analítica"`` u ``"Holística"``) determina
-    su estructura.
+    The rubric is requested in JSON format with the achievement levels
+    ``logro_destacado``, ``logro_esperado``, ``en_proceso`` and
+    ``en_inicio``, derived from the session performance and criteria.
+    The rubric type (``"Analítica"`` or ``"Holística"``) determines
+    its structure.
 
     Args:
-        session_params (dict): Parámetros de la sesión de aprendizaje.
-            Claves esperadas:
+        session_params (dict): Learning session parameters.
+            Expected keys:
 
-            - ``titulo`` (str): Título de la sesión.
-            - ``grado_seccion`` (str): Grado y sección del aula.
-            - ``numero_sesion`` (str): Número correlativo de la sesión.
-            - ``nombre_modulo`` (str): Nombre del módulo curricular.
-            - ``nombre_unidad`` (str): Nombre de la unidad didáctica.
-            - ``duracion_total`` (str): Duración total (por ejemplo,
-              ``"90 min"``).
-            - ``materiales_recursos`` (str): Materiales y recursos.
+            - ``titulo`` (str): Session title.
+            - ``grado_seccion`` (str): Grade and classroom section.
+            - ``numero_sesion`` (str): Sequential session number.
+            - ``nombre_modulo`` (str): Curricular module name.
+            - ``nombre_unidad`` (str): Didactic unit name.
+            - ``duracion_total`` (str): Total duration (e.g. ``"90 min"``).
+            - ``materiales_recursos`` (str): Materials and resources.
 
-        teacher_profile (dict): Perfil del docente a cargo.
-            Claves esperadas:
+        teacher_profile (dict): Profile of the teacher in charge.
+            Expected keys:
 
-            - ``nombre_docente`` (str): Nombre completo del docente.
-            - ``institucion_educativa`` (str): Nombre de la institución.
-            - ``area`` (str): Área curricular.
-            - ``especialidad`` (str): Especialidad del docente.
-            - ``ciclo`` (str): Ciclo educativo (por ejemplo, ``"VII"``).
-            - ``tipo_rubrica`` (str): Tipo de rúbrica
-              (``"Analítica"`` u ``"Holística"``).
+            - ``nombre_docente`` (str): Teacher's full name.
+            - ``institucion_educativa`` (str): Institution name.
+            - ``area`` (str): Curricular area.
+            - ``especialidad`` (str): Teacher's specialization.
+            - ``ciclo`` (str): Educational cycle (e.g. ``"VII"``).
+            - ``tipo_rubrica`` (str): Rubric type
+              (``"Analítica"`` or ``"Holística"``).
 
     Returns:
-        str: Prompt completo listo para enviarse al modelo de IA.
+        str: Complete prompt ready to be sent to the AI model.
     """
     return (
         f"Eres un experto en planificación curricular del sistema educativo peruano. "

@@ -1,9 +1,9 @@
 """
 parser.py
 ---------
-Procesamiento y limpieza de la respuesta en texto plano devuelta por el
-modelo de IA. Extrae cada sección de la sesión de aprendizaje mediante
-expresiones regulares y las organiza en un diccionario estructurado.
+Processes and cleans the plain text response returned by the AI model.
+Extracts each section of the learning session using regular expressions
+and organizes them into a structured dictionary.
 """
 
 import json
@@ -12,24 +12,23 @@ import re
 
 def remove_markdown(text: str) -> str:
     """
-    Elimina formato Markdown del texto.
+    Removes Markdown formatting from text.
 
-    Remueve los siguientes elementos:
+    Strips the following elements:
 
-    - Encabezados (``#`` al inicio de línea).
-    - Énfasis y código en línea (``*``, `` ` ``).
-    - Caracteres especiales de cita y enlace (``>``, ``[``, ``]``).
+    - Headers (``#`` at the start of a line).
+    - Emphasis and inline code (``*``, `` ` ``).
+    - Quote and link special characters (``>``, ``[``, ``]``).
 
     Note:
-        Los guiones bajos (``_``) no se eliminan para preservar
-        los nombres de clave con underscore (por ejemplo,
-        ``indicador_logro``).
+        Underscores (``_``) are intentionally preserved to keep
+        underscore-based key names intact (e.g. ``indicador_logro``).
 
     Args:
-        text (str): Texto con posible formato Markdown.
+        text (str): Text with possible Markdown formatting.
 
     Returns:
-        str: Texto limpio sin marcadores Markdown.
+        str: Clean text without Markdown markers.
     """
     text = re.sub(r"^\s*#{1,6}\s*", "", text, flags=re.MULTILINE)
     text = re.sub(r"[*`]", "", text)
@@ -39,30 +38,30 @@ def remove_markdown(text: str) -> str:
 
 def process_response(response: str) -> dict:
     """
-    Procesa la respuesta de la IA y la divide en secciones
-    correspondientes a la sesión de aprendizaje.
+    Processes the AI response and splits it into sections
+    corresponding to the learning session structure.
 
-    Normaliza los espacios en blanco, elimina el formato Markdown y aplica
-    expresiones regulares para extraer el contenido de cada clave esperada.
+    Normalizes whitespace, strips Markdown formatting, and applies
+    regular expressions to extract the content of each expected key.
 
-    Los patrones aceptan claves con o sin guión bajo (por ejemplo,
-    ``indicador_logro`` o ``indicadorlogro``) para tolerar variaciones
-    menores en la respuesta del modelo.
+    Patterns accept keys with or without underscores (e.g.
+    ``indicador_logro`` or ``indicadorlogro``) to tolerate minor
+    variations in the model's response.
 
-    Si una sección no se encuentra en la respuesta, se asigna el valor
-    ``"Respuesta incompleta"`` como fallback.
+    If a section is not found in the response, the fallback value
+    ``"Respuesta incompleta"`` is assigned.
 
-    La clave ``rubrica`` recibe un tratamiento especial: su contenido se
-    parsea como JSON y se devuelve como lista de diccionarios. Si el
-    parseo falla, se devuelve una lista vacía.
+    The ``rubrica`` key receives special treatment: its content is
+    parsed as JSON and returned as a list of dictionaries. If parsing
+    fails, an empty list is returned.
 
     Args:
-        response (str): Texto completo devuelto por el modelo de IA,
-            con el formato ``clave: contenido`` por sección.
+        response (str): Full text returned by the AI model,
+            formatted as ``key: content`` per section.
 
     Returns:
-        dict: Diccionario con una entrada por cada sección de la sesión.
-            Claves del diccionario:
+        dict: Dictionary with one entry per session section.
+            Dictionary keys:
 
             - ``proposito``
             - ``indicador_logro``
@@ -81,10 +80,10 @@ def process_response(response: str) -> dict:
             - ``retroalimentacion``
             - ``cierre``
             - ``extension``
-            - ``rubrica`` (list[dict]): Lista de criterios de la rúbrica.
-              Cada dict contiene las claves ``criterio``,
+            - ``rubrica`` (list[dict]): List of rubric criteria.
+              Each dict contains the keys ``criterio``,
               ``logro_destacado``, ``logro_esperado``, ``en_proceso``
-              y ``en_inicio``.
+              and ``en_inicio``.
 
     Example:
         >>> sections = process_response(ai_raw_text)
@@ -93,6 +92,7 @@ def process_response(response: str) -> dict:
         >>> print(sections["rubrica"])
         [{"criterio": "...", "logro_esperado": "...", ...}]
     """
+    # Normalize whitespace and strip Markdown before extracting sections
     cleaned_response = re.sub(r"\s+", " ", response).strip()
     cleaned_response = remove_markdown(cleaned_response)
 
@@ -168,16 +168,18 @@ def process_response(response: str) -> dict:
         if match:
             sections[key] = match.group(1).strip()
         else:
+            # Fallback value when a section is missing from the response
             sections[key] = "Respuesta incompleta"
 
-    # Parsear rubrica como JSON -> lista de dicts
+    # Parse rubrica as JSON -> list of dicts
     rubrica_raw = sections.get("rubrica", "")
     try:
-        # Envolver en [] si la IA omitió los corchetes externos
+        # Wrap in [] if the AI omitted the outer brackets
         if rubrica_raw.strip() and not rubrica_raw.strip().startswith("["):
             rubrica_raw = f"[{rubrica_raw}]"
         sections["rubrica"] = json.loads(rubrica_raw)
     except (json.JSONDecodeError, TypeError):
+        # Return empty list if JSON parsing fails
         sections["rubrica"] = []
 
     return sections

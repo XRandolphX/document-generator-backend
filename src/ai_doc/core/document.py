@@ -1,14 +1,14 @@
 """
 document.py
 -----------
-Generación del documento Word y conversión a PDF.
+Word document generation and PDF conversion.
 
-Orquesta el flujo completo de producción del archivo final:
-    1. Construye el prompt con ``prompt.modify_prompt()``.
-    2. Llama al modelo DeepSeek, OpenAI o el que gustes vía OpenRouter en modo streaming.
-    3. Parsea la respuesta con ``parser.process_response()``.
-    4. Rellena la plantilla Word con ``DocxTemplate``.
-    5. Convierte el ``.docx`` generado a PDF mediante LibreOffice.
+Orchestrates the complete production flow of the final file:
+    1. Builds the prompt with ``prompt.modify_prompt()``.
+    2. Calls the DeepSeek model via OpenRouter in streaming mode.
+    3. Parses the response with ``parser.process_response()``.
+    4. Fills the Word template with ``DocxTemplate``.
+    5. Converts the generated ``.docx`` to PDF using LibreOffice.
 """
 
 import os
@@ -27,20 +27,20 @@ from ai_doc.core.prompt import modify_prompt
 
 def calcular_tiempos(duracion_total: str) -> dict:
     """
-    Calcula la distribución de tiempos por proceso didáctico
-    en función de la duración total de la sesión.
+    Calculates the time distribution per didactic process
+    based on the total session duration.
 
-    Extrae el valor numérico de ``duracion_total`` y lo distribuye
-    proporcionalmente entre los ocho momentos de la sesión. Si no se
-    encuentra un número válido, usa 90 minutos como valor por defecto.
+    Extracts the numeric value from ``duracion_total`` and distributes
+    it proportionally across the eight session moments. If no valid
+    number is found, defaults to 90 minutes.
 
     Args:
-        duracion_total (str): Duración total de la sesión, por ejemplo
-            ``"90 min"`` o ``"120 minutos"``.
+        duracion_total (str): Total session duration, for example
+            ``"90 min"`` or ``"120 minutos"``.
 
     Returns:
-        dict: Diccionario con ocho claves, cada una con el tiempo
-        asignado en formato ``"N min"``. Claves:
+        dict: Dictionary with eight keys, each holding the assigned
+        time in ``"N min"`` format. Keys:
 
         - ``tiempo_proposito_aprendizaje``
         - ``tiempo_introduccion``
@@ -52,7 +52,9 @@ def calcular_tiempos(duracion_total: str) -> dict:
         - ``tiempo_extension``
     """
     match = re.search(r"\d+", duracion_total)
-    total = int(match.group()) if match else 90
+    total = (
+        int(match.group()) if match else 90
+    )  # Default to 90 minutes if no number found
 
     proporciones = {
         "tiempo_proposito_aprendizaje": 0.056,
@@ -66,48 +68,47 @@ def calcular_tiempos(duracion_total: str) -> dict:
     }
 
     return {
-        clave: f"{round(total * proporcion)} min"
-        for clave, proporcion in proporciones.items()
+        key: f"{round(total * proportion)} min"
+        for key, proportion in proporciones.items()
     }
 
 
 def generate_document(session_params: dict, teacher_profile: dict) -> str:
     """
-    Genera un documento Word a partir de los parámetros de la sesión
-    y el perfil del docente.
+    Generates a Word document from the session parameters
+    and the teacher profile.
 
-    Flujo interno:
-        1. Invoca ``modify_prompt()`` para construir el prompt.
-        2. Realiza una solicitud en streaming al modelo
-           ``deepseek/deepseek-chat`` vía OpenRouter.
-        3. Concatena los chunks de la respuesta y los procesa con
+    Internal flow:
+        1. Calls ``modify_prompt()`` to build the prompt.
+        2. Sends a streaming request to the ``deepseek/deepseek-chat``
+           model via OpenRouter.
+        3. Concatenates the response chunks and processes them with
            ``process_response()``.
-        4. Combina los datos del docente, los parámetros de sesión, la
-        distribución de tiempos y el contenido generado en un contexto
-        para ``DocxTemplate``.
-        5. Renderiza la plantilla ``sesion_template.docx`` y guarda el
-           archivo resultante en ``generated_files/document_generated.docx``.
+        4. Combines teacher data, session parameters, time distribution,
+           and generated content into a context for ``DocxTemplate``.
+        5. Renders the ``sesion_template.docx`` template and saves the
+           result to ``generated_files/document_generated.docx``.
 
     Args:
-        session_params (dict): Parámetros de la sesión de aprendizaje.
-            Claves obligatorias: ``titulo``, ``grado_seccion``,
+        session_params (dict): Learning session parameters.
+            Required keys: ``titulo``, ``grado_seccion``,
             ``numero_sesion``, ``nombre_modulo``, ``nombre_unidad``,
             ``duracion_total``, ``materiales_recursos``.
-            Clave opcional: ``fecha`` (si se omite, se usa la fecha actual
-            con formato ``"%d %b, %Y"``).
-        teacher_profile (dict): Perfil del docente.
-            Claves obligatorias: ``nombre_docente``, ``institucion_educativa``,
+            Optional key: ``fecha`` (if omitted, today's date is used
+            in ``"%d %b, %Y"`` format).
+        teacher_profile (dict): Teacher profile.
+            Required keys: ``nombre_docente``, ``institucion_educativa``,
             ``area``, ``especialidad``, ``ciclo``, ``tipo_rubrica``.
 
     Returns:
-        str: Ruta absoluta al archivo ``.docx`` generado.
+        str: Absolute path to the generated ``.docx`` file.
 
     Raises:
-        openai.APIError: Si la solicitud a la API de OpenRouter falla.
-        FileNotFoundError: Si la plantilla ``sesion_template.docx``
-            no existe en el directorio ``templates/``
-        Exception: Cualquier error inesperado durante el renderizado o guardado
-            del documento.
+        openai.APIError: If the OpenRouter API request fails.
+        FileNotFoundError: If the ``sesion_template.docx`` template
+            does not exist in the ``templates/`` directory.
+        Exception: Any unexpected error during rendering or saving
+            the document.
     """
     prompt = modify_prompt(session_params, teacher_profile)
 
@@ -119,7 +120,7 @@ def generate_document(session_params: dict, teacher_profile: dict) -> str:
         stream=True,
     )
 
-    # Acumular todos los chunks del stream antes de parsear
+    # Accumulate all stream chunks before parsing
     collected_messages = []
     for chunk in response_iterator:
         delta_obj = chunk.choices[0].delta
@@ -131,14 +132,14 @@ def generate_document(session_params: dict, teacher_profile: dict) -> str:
     tiempos = calcular_tiempos(session_params["duracion_total"])
 
     context = {
-        # Datos del docente
+        # Teacher data
         "nombre_docente": teacher_profile["nombre_docente"],
         "institucion_educativa": teacher_profile["institucion_educativa"],
         "area": teacher_profile["area"],
         "especialidad": teacher_profile["especialidad"],
         "ciclo": teacher_profile["ciclo"],
         "tipo_rubrica": teacher_profile["tipo_rubrica"],
-        # Datos de la sesión
+        # Session data
         "titulo": session_params["titulo"],
         "grado_seccion": session_params["grado_seccion"],
         "numero_sesion": session_params["numero_sesion"],
@@ -147,7 +148,7 @@ def generate_document(session_params: dict, teacher_profile: dict) -> str:
         "fecha": session_params.get("fecha", datetime.today().strftime("%d %b, %Y")),
         "duracion_total": session_params["duracion_total"],
         "materiales_recursos": session_params["materiales_recursos"],
-        # Contenido generado por la IA
+        # AI-generated content
         "proposito": sections["proposito"],
         "indicador_logro": sections["indicador_logro"],
         "desempeno": sections["desempeno"],
@@ -166,14 +167,16 @@ def generate_document(session_params: dict, teacher_profile: dict) -> str:
         "cierre": sections["cierre"],
         "extension": sections["extension"],
         "filas_rubrica": sections["rubrica"],
-        # Distribución de tiempos por proceso didáctico
+        # Time distribution per didactic process
         **tiempos,
     }
 
+    # Create output directory if it does not exist
     output_dir = Path(__file__).parent.parent / "generated_files"
     output_dir.mkdir(exist_ok=True)
     doc_path = output_dir / "document_generated.docx"
 
+    # Load template, render context and save the generated document
     template_path = Path(__file__).parent.parent / "templates" / "sesion_template.docx"
     doc = DocxTemplate(template_path)
     doc.render(context)
@@ -184,34 +187,35 @@ def generate_document(session_params: dict, teacher_profile: dict) -> str:
 
 def convert_to_pdf(doc_path: str) -> str:
     """
-    Convierte un archivo ``.docx`` a PDF usando LibreOffice en modo headless.
+    Converts a ``.docx`` file to PDF using LibreOffice in headless mode.
 
-    Ejecuta el comando ``soffice --headless --convert-to pdf`` en un
-    subproceso. El archivo PDF se genera en el mismo directorio que el
-    ``.docx`` de entrada y comparte su nombre base.
+    Runs the ``soffice --headless --convert-to pdf`` command in a
+    subprocess. The PDF file is generated in the same directory as the
+    input ``.docx`` and shares its base name.
 
     Args:
-        doc_path (str): Ruta absoluta al archivo ``.docx`` que se desea
-            convertir. El archivo debe existir en el sistema de archivos.
+        doc_path (str): Absolute path to the ``.docx`` file to convert.
+            The file must exist on the filesystem.
 
     Returns:
-        str: Ruta absoluta al archivo ``.pdf`` generado.
+        str: Absolute path to the generated ``.pdf`` file.
 
     Raises:
-        FileNotFoundError: Si ``doc_path`` no corresponde a un archivo
-            existente en el sistema de archivos.
-        RuntimeError: Si LibreOffice termina con un código de error, o si el
-            archivo PDF no aparece en el directorio de salida tras la
-            conversión.
+        FileNotFoundError: If ``doc_path`` does not correspond to an
+            existing file on the filesystem.
+        RuntimeError: If LibreOffice exits with an error code, or if the
+            PDF file does not appear in the output directory after
+            conversion.
 
     Note:
-        Requiere que ``soffice`` (LibreOffice) esté instalado y disponible
-        en el PATH del sistema. En entornos de despliegue como Railway puede
-        ser necesario configurar un buildpack adicional o usar una alternativa
-        como Gotenberg (https://gotenberg.dev).
+        Requires ``soffice`` (LibreOffice) to be installed and available
+        on the system PATH. In deployment environments such as Railway,
+        a buildpack that includes LibreOffice may be required, or an
+        alternative like Gotenberg (https://gotenberg.dev) should be
+        considered.
     """
     if not os.path.isfile(doc_path):
-        raise FileNotFoundError(f"El archivo {doc_path} no existe.")
+        raise FileNotFoundError(f"File not found: {doc_path}")
 
     output_folder = os.path.dirname(doc_path)
     pdf_name = os.path.splitext(os.path.basename(doc_path))[0] + ".pdf"
@@ -232,12 +236,13 @@ def convert_to_pdf(doc_path: str) -> str:
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
         )
+        # Verify the PDF was actually created after conversion
         if not os.path.isfile(pdf_path):
             raise RuntimeError(
-                f"Error en la conversión: el archivo PDF no fue generado en {output_folder}."
+                f"Conversion error: PDF file was not generated in {output_folder}."
             )
         return pdf_path
 
     except subprocess.CalledProcessError as e:
         stderr = e.stderr.decode(errors="ignore")
-        raise RuntimeError(f"Error ejecutando LibreOffice: {stderr}")
+        raise RuntimeError(f"LibreOffice execution error: {stderr}")
