@@ -1,11 +1,11 @@
 """
 config.py
 ---------
-Carga y expone las variables de entorno necesarias para el funcionamiento
-de la aplicación.
+Loads and exposes the environment variables required for the application
+to function.
 
-Variables requeridas en el archivo ``.env``:
-    API_KEY (str): Clave de autenticación para la API de OpenRouter.
+Required variables in the ``.env`` file:
+    API_KEY (str): Authentication key for the OpenRouter API.
 """
 
 import os
