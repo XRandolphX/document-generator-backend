@@ -11,6 +11,7 @@ Orchestrates the complete production flow of the final file:
     5. Converts the generated ``.docx`` to PDF using LibreOffice.
 """
 
+import logging
 import os
 import re
 import subprocess
@@ -23,6 +24,8 @@ from openai import OpenAI
 from ai_doc.config import API_KEY
 from ai_doc.core.parser import process_response
 from ai_doc.core.prompt import modify_prompt
+
+logger = logging.getLogger(__name__)
 
 
 def calcular_tiempos(duracion_total: str) -> dict:
@@ -111,6 +114,7 @@ def generate_document(session_params: dict, teacher_profile: dict) -> str:
             the document.
     """
     prompt = modify_prompt(session_params, teacher_profile)
+    logger.info("Prompt built for session: %s", session_params["titulo"])
 
     client = OpenAI(base_url="https://openrouter.ai/api/v1", api_key=API_KEY)
 
@@ -120,6 +124,8 @@ def generate_document(session_params: dict, teacher_profile: dict) -> str:
         stream=True,
     )
 
+    logger.info("Streaming response from DeepSeek via OpenRouter...")
+
     # Accumulate all stream chunks before parsing
     collected_messages = []
     for chunk in response_iterator:
@@ -128,7 +134,11 @@ def generate_document(session_params: dict, teacher_profile: dict) -> str:
         collected_messages.append(content)
 
     full_reply_content = "".join(collected_messages)
+    logger.info("Response received — %d characters", len(full_reply_content))
+
     sections = process_response(full_reply_content)
+    logger.info("Sections parsed: %s", list(sections.keys()))
+
     tiempos = calcular_tiempos(session_params["duracion_total"])
 
     context = {
@@ -181,6 +191,7 @@ def generate_document(session_params: dict, teacher_profile: dict) -> str:
     doc = DocxTemplate(template_path)
     doc.render(context)
     doc.save(doc_path)
+    logger.info("Document saved: %s", doc_path)
 
     return str(doc_path)
 
@@ -221,6 +232,8 @@ def convert_to_pdf(doc_path: str) -> str:
     pdf_name = os.path.splitext(os.path.basename(doc_path))[0] + ".pdf"
     pdf_path = os.path.join(output_folder, pdf_name)
 
+    logger.info("Converting to PDF: %s", doc_path)
+
     try:
         subprocess.run(
             [
@@ -241,6 +254,7 @@ def convert_to_pdf(doc_path: str) -> str:
             raise RuntimeError(
                 f"Conversion error: PDF file was not generated in {output_folder}."
             )
+        logger.info("Conversion successful: %s", pdf_path)
         return pdf_path
 
     except subprocess.CalledProcessError as e:

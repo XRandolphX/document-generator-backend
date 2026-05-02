@@ -8,10 +8,17 @@ Exposes two routes:
     - ``POST /generate-document`` : Generates a learning session in Word and PDF format.
 """
 
+import logging
+
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 
 from ai_doc.core.document import convert_to_pdf, generate_document
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+)
 
 app = Flask(__name__)
 CORS(app)
