@@ -2,7 +2,7 @@
 
 Flask backend that generates complete learning sessions for Peruvian teachers using AI. The teacher enters their profile data and the session topic, and the system automatically produces a ready-to-use Word document along with its PDF version.
 
-> **Status:** Backend complete and functional. React frontend in development.
+> **Status:** Backend functional, in evolutionary enhancement and feature expansion phase. ![React frontend](https://github.com/XRandolphX/document-generator-frontend.git) in evolutionary maintenance and refactoring phase.
 
 ---
 

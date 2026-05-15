@@ -15,6 +15,7 @@ from flask_cors import CORS
 
 from ai_doc.core.document import convert_to_pdf, generate_document
 
+# Configure logging before creating the app
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
