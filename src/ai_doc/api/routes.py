@@ -22,7 +22,7 @@ logging.basicConfig(
 )
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, origins="http://localhost:5173", supports_credentials=True)
 
 
 @app.route("/")
